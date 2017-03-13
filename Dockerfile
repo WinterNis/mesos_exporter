@@ -5,11 +5,11 @@ EXPOSE 9110
 RUN addgroup exporter \
  && adduser -S -G exporter exporter
 
-COPY . /go/src/github.com/mesosphere/mesos_exporter
+COPY . /go/src/github.com/WinterNis/mesos_exporter
 
 RUN apk --update add ca-certificates \
  && apk --update add --virtual build-deps go git \
- && cd /go/src/github.com/mesosphere/mesos_exporter \
+ && cd /go/src/github.com/WinterNis/mesos_exporter \
  && GOPATH=/go go get \
  && GOPATH=/go go build -o /bin/mesos-exporter \
  && apk del --purge build-deps \
