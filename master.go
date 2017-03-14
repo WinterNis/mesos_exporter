@@ -2,6 +2,7 @@ package main
 
 import (
 	"strings"
+    "regexp"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -275,6 +276,46 @@ func newMasterCollector(httpClient *httpClient) prometheus.Collector {
 			//	c.(*prometheus.Histogram).Buckets //FIXME
 			return nil
 		},
+
+        // Master stats about allocator
+        gauge("master", "ressources_offered_or_allocated", "Ressources offered or allocated.", "type"): func(m metricMap, c prometheus.Collector) error {
+            offered_cpu, ok := m["allocator/mesos/resources/cpus/offered_or_allocated"]
+            offered_disk, ok := m["allocator/mesos/resources/disk/offered_or_allocated"]
+            offered_mem, ok := m["allocator/mesos/resources/mem/offered_or_allocated"]
+            if !ok {
+                return notFoundInMap
+            }
+
+            c.(*prometheus.GaugeVec).WithLabelValues("cpu", "all").Set(offered_cpu)
+            c.(*prometheus.GaugeVec).WithLabelValues("disk", "all").Set(offered_disk)
+            c.(*prometheus.GaugeVec).WithLabelValues("mem", "all").Set(offered_mem)
+
+            for k, v := range m {
+                r := regexp.MustCompile("allocator/mesos/quota/roles/(?P<role>[^/])/ressources/(?P<ressource>[^/])/offered_or_allocated")
+                match := r.FindStringSubmatch(k)
+                if match != nil {
+                    result := make(map[string]string)
+                    for i, name := range r.SubexpNames() {
+                        if i != 0 { result[name] = match[i] }
+                    }
+                    c.(*prometheus.GaugeVec).WithLabelValues(result["ressource"], result["role"]).Set(v)
+                }
+            }
+            return nil
+        },
+        gauge("master", "ressources_total", "Total ressources.", "type"): func(m metricMap, c prometheus.Collector) error {
+            total_cpu, ok := m["allocator/mesos/resources/cpus/total"]
+            total_disk, ok := m["allocator/mesos/resources/disk/total"]
+            total_mem, ok := m["allocator/mesos/resources/mem/total"]
+            if !ok {
+                return notFoundInMap
+            }
+            c.(*prometheus.GaugeVec).WithLabelValues("cpu").Set(total_cpu)
+            c.(*prometheus.GaugeVec).WithLabelValues("mem").Set(total_mem)
+            c.(*prometheus.GaugeVec).WithLabelValues("disk").Set(total_disk)
+
+            return nil
+        },
 	}
 	return newMetricCollector(httpClient, metrics)
 }
