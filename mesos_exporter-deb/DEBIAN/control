@@ -1,0 +1,8 @@
+Package: mesos-exporter
+Maintainer: Debian <bu.docker@interne.ovh.net>
+Version: 1.0-rc1
+Priority: optional
+Architecture: amd64
+Section: unknown
+Depends: libc6
+Description: Prometheus exporter for mesos.
